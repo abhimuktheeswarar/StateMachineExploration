@@ -1,5 +1,4 @@
-package com.msabhi.shared
-
+package com.msabhi.shared.sample
 
 class Greeting {
     fun greeting(): String {
