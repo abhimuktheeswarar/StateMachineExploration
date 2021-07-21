@@ -24,6 +24,7 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
+                kotlin("kotlin-reflect")
                 implementation(Dependencies.Coroutines.common)
             }
         }
