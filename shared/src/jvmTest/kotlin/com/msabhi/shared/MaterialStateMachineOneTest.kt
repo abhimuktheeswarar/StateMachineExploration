@@ -2,7 +2,7 @@ package com.msabhi.shared
 
 import com.msabhi.shared.sample.implementation.MaterialEvent
 import com.msabhi.shared.sample.implementation.MaterialState
-import com.msabhi.shared.sample.implementation.materialtransitions
+import com.msabhi.shared.sample.implementation.materialTransitions
 import com.msabhi.shared.sample.statemachine.StateMachineOne
 import org.junit.Test
 import kotlin.test.assertEquals
@@ -13,7 +13,7 @@ class MaterialStateMachineOneTest {
     @Test
     fun test() {
 
-        val stateMachine = StateMachineOne(MaterialState.Solid, materialtransitions)
+        val stateMachine = StateMachineOne(MaterialState.Solid, materialTransitions)
 
         assertEquals(MaterialState.Solid, stateMachine.state)
 

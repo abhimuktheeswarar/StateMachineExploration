@@ -12,18 +12,14 @@ class StateMachineThree<S : Any, E : Any, A : Any>(
 
     fun dispatch(event: E) {
 
-        for ((key, value) in stateTransitions) {
-
-            val (s, e) = key
-
-            if (s.isInstance(state) && e.isInstance(event)) {
-                val output = value.invoke(state, event)
-                this.state = output.first
-                this.sideEffects = output.second
-                return
-            }
+        stateTransitions[Pair(state::class, event::class)]?.let {
+            val output = it.invoke(state, event)
+            this.state = output.first
+            this.sideEffects = output.second
+        } ?: run {
+            throw IllegalStateException()
         }
-
-        throw IllegalStateException()
     }
 }
+
+

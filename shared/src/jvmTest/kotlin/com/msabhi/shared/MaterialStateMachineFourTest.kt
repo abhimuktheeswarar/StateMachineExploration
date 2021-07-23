@@ -2,18 +2,18 @@ package com.msabhi.shared
 
 import com.msabhi.shared.sample.implementation.MaterialEvent
 import com.msabhi.shared.sample.implementation.MaterialState
-import com.msabhi.shared.sample.implementation.materialTransitions
-import com.msabhi.shared.sample.statemachine.StateMachineTwo
+import com.msabhi.shared.sample.implementation.materialTransitions3
+import com.msabhi.shared.sample.statemachine.StateMachineFour
 import org.junit.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 
-class MaterialStateMachineTwoTest {
+class MaterialStateMachineFourTest {
 
     @Test
     fun test() {
 
-        val stateMachine = StateMachineTwo(MaterialState.Solid, materialTransitions)
+        val stateMachine = StateMachineFour(MaterialState.Solid, materialTransitions3)
 
         assertEquals(MaterialState.Solid, stateMachine.state)
 
