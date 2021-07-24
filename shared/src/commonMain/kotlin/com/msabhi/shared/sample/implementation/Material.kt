@@ -1,11 +1,14 @@
 package com.msabhi.shared.sample.implementation
 
+import com.msabhi.shared.sample.statemachine.IState
+import com.msabhi.shared.sample.statemachine.Match
 import kotlin.reflect.KClass
 
 sealed class MaterialState {
     object Solid : MaterialState()
     object Liquid : MaterialState()
     object Gas : MaterialState()
+    data class Quantum(val any: MaterialState) : MaterialState()
 }
 
 sealed class MaterialEvent {
@@ -13,6 +16,7 @@ sealed class MaterialEvent {
     object OnFrozen : MaterialEvent()
     object OnVaporized : MaterialEvent()
     object OnCondensed : MaterialEvent()
+    data class OnQuantum(val any: MaterialState.Quantum) : MaterialEvent()
 }
 
 sealed class MaterialSideEffect {
@@ -58,4 +62,36 @@ val materialTransitions3 =
                 MaterialEvent.OnFrozen::class as KClass<MaterialEvent> to MaterialState.Solid))
         put(MaterialState.Gas::class as KClass<MaterialState>,
             mapOf(MaterialEvent.OnCondensed::class as KClass<MaterialEvent> to MaterialState.Liquid))
+    }
+
+@Suppress("UNCHECKED_CAST")
+val materialTransitions4 =
+    LinkedHashMap<Match<MaterialState>, IState<MaterialState, MaterialEvent, MaterialSideEffect>>().apply {
+        val solid = IState<MaterialState, MaterialEvent, MaterialSideEffect>().apply {
+            transitions[Match.instance<MaterialEvent.OnMelted>() as Match<MaterialEvent>] =
+                { _, _ -> Pair(MaterialState.Liquid, emptyList()) }
+            transitions[Match.value(MaterialEvent.OnQuantum(MaterialState.Quantum(MaterialState.Gas))) as Match<MaterialEvent>] =
+                { _, e -> Pair((e as MaterialEvent.OnQuantum).any, emptyList()) }
+        }
+        put(Match.instance<MaterialState.Solid>() as Match<MaterialState>, solid)
+
+        val liquid = IState<MaterialState, MaterialEvent, MaterialSideEffect>().apply {
+            transitions[Match.instance<MaterialEvent.OnVaporized>() as Match<MaterialEvent>] =
+                { _, _ -> Pair(MaterialState.Gas, emptyList()) }
+            transitions[Match.instance<MaterialEvent.OnFrozen>() as Match<MaterialEvent>] =
+                { _, _ -> Pair(MaterialState.Solid, emptyList()) }
+        }
+        put(Match.instance<MaterialState.Liquid>() as Match<MaterialState>, liquid)
+
+        val gas = IState<MaterialState, MaterialEvent, MaterialSideEffect>().apply {
+            transitions[Match.instance<MaterialEvent.OnCondensed>() as Match<MaterialEvent>] =
+                { _, _ -> Pair(MaterialState.Liquid, emptyList()) }
+        }
+        put(Match.instance<MaterialState.Gas>() as Match<MaterialState>, gas)
+
+        val quantum = IState<MaterialState, MaterialEvent, MaterialSideEffect>().apply {
+            transitions[Match.instance<MaterialEvent.OnVaporized>() as Match<MaterialEvent>] =
+                { s, _ -> Pair((s as MaterialState.Quantum).any, emptyList()) }
+        }
+        put(Match.value(MaterialState.Quantum(MaterialState.Gas)) as Match<MaterialState>, quantum)
     }

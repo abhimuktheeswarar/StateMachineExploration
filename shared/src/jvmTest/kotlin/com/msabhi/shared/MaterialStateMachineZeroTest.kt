@@ -41,6 +41,8 @@ class MaterialStateMachineZeroTest {
                         else -> throw IllegalStateException()
                     }
                 }
+
+                else -> throw IllegalStateException()
             }
         }
 
