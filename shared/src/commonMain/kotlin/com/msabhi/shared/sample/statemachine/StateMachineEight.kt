@@ -1,11 +1,12 @@
 package com.msabhi.shared.sample.statemachine
 
-import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 
@@ -30,23 +31,23 @@ class StateHolderEight<S : Any, E : Any>(
 
     var currentState: S = initialState
 
-    fun dispatch(event: E, completableDeferred: CompletableDeferred<S>?) {
+    suspend fun dispatch(event: E, sendChannel: SendChannel<S>?) {
         println("$id: ${event::class.simpleName}, ${currentState::class.simpleName}")
 
         transitions.filterKeys { it.matches(event) }.values.firstOrNull()?.let {
             currentState = it(currentState, event)
-            completableDeferred?.complete(currentState)
+            sendChannel?.send(currentState)
             return
         }
 
         states.filterKeys { it.matches(currentState) }.values.firstOrNull()?.let {
 
             if (it is StateHolderEight && it.eventMatch.matches(event)) {
-                it.dispatch(event, completableDeferred)
+                it.dispatch(event, sendChannel)
             } else if (it is IStateEight) {
                 it.transitions.filterKeys { it.matches(event) }.values.firstOrNull()?.let {
                     currentState = it(currentState, event)
-                    completableDeferred?.complete(currentState)
+                    sendChannel?.send(currentState)
                     return
                 }
             } else {
@@ -58,7 +59,7 @@ class StateHolderEight<S : Any, E : Any>(
 
 
 class StateMachineEight<S : Any, E : Any>(
-    scope: CoroutineScope,
+    private val scope: CoroutineScope,
     private val states: Set<StateHolderEight<S, E>>,
 ) {
 
@@ -67,22 +68,38 @@ class StateMachineEight<S : Any, E : Any>(
     private val inputEvents =
         Channel<E>(capacity = Int.MAX_VALUE, onBufferOverflow = BufferOverflow.SUSPEND)
 
+    private val stateUpdates =
+        Channel<S>(capacity = Int.MAX_VALUE, onBufferOverflow = BufferOverflow.SUSPEND)
+
     val stateFlow: Flow<S> = mutableSharedFlow
 
+
     init {
+
         scope.launch {
-            for (event in inputEvents) {
-                states.forEach {
-                    val completableDeferred = CompletableDeferred<S>()
-                    it.dispatch(event, completableDeferred)
-                    val state = completableDeferred.await()
+            while (isActive) {
+                for (state in stateUpdates) {
+                    //println("++SM stateUpdates: ${state::class.simpleName}")
                     mutableSharedFlow.emit(state)
+                }
+            }
+        }
+        scope.launch {
+            while (isActive) {
+                for (event in inputEvents) {
+                    states.forEach {
+                        //println("++SM inputEvents: ${event::class.simpleName}")
+                        if (it.eventMatch.matches(event)) {
+                            it.dispatch(event, stateUpdates)
+                        }
+                    }
                 }
             }
         }
     }
 
-    fun dispatch(event: E) {
-        inputEvents.trySend(event)
+    suspend fun dispatch(event: E) {
+        //println("++SM dispatch: ${event::class.simpleName}")
+        inputEvents.send(event)
     }
 }

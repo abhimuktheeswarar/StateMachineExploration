@@ -7,7 +7,7 @@ interface RoadState
 
 interface RoadEvent
 
-sealed class PedestrianState : RoadState {
+sealed class PedestrianState : TrafficLightState() {
 
     object Walk : PedestrianState()
     object Wait : PedestrianState()
@@ -16,7 +16,7 @@ sealed class PedestrianState : RoadState {
 
 }
 
-sealed class PedestrianEvent : RoadEvent {
+sealed class PedestrianEvent : TrafficLightEvent() {
 
     object PedestrianCountdown : PedestrianEvent()
 }
@@ -35,6 +35,20 @@ sealed class TrafficLightState : RoadState {
 sealed class TrafficLightEvent : RoadEvent {
 
     object Timer : TrafficLightEvent()
+}
+
+sealed class CameraState : RoadState {
+
+    object Recording : CameraState()
+
+    object Paused : CameraState()
+}
+
+sealed class CameraEvent : RoadEvent {
+
+    object ResumeRecord : CameraEvent()
+
+    object PauseRecord : CameraEvent()
 }
 
 @Suppress("UNCHECKED_CAST")
@@ -178,7 +192,7 @@ val pedestrianStates3 =
     }
 
 @Suppress("UNCHECKED_CAST")
-val trafficLight3 =
+val trafficLightStates3 =
     LinkedHashMap<Match<TrafficLightState>, BaseStateEight<TrafficLightState, TrafficLightEvent>>().apply {
         val green =
             IStateEight<TrafficLightState, TrafficLightEvent>(Match.instance<TrafficLightState>() as Match<Any>,
@@ -204,4 +218,24 @@ val trafficLight3 =
         }
         put(Match.value(TrafficLightState.RedSM) as Match<TrafficLightState>,
             red as BaseStateEight<TrafficLightState, TrafficLightEvent>)
+    }
+
+@Suppress("UNCHECKED_CAST")
+val cameraStates =
+    LinkedHashMap<Match<RoadState>, BaseStateEight<CameraState, CameraEvent>>().apply {
+        val pause =
+            IStateEight<CameraState, CameraEvent>(Match.instance<CameraState>() as Match<Any>,
+                Match.instance<CameraEvent>() as Match<Any>).apply {
+                transitions[Match.instance<CameraEvent.ResumeRecord>() as Match<CameraEvent>] =
+                    { _, _ -> CameraState.Recording }
+            }
+        put(Match.instance<CameraState.Paused>() as Match<RoadState>, pause)
+
+        val recording =
+            IStateEight<CameraState, CameraEvent>(Match.instance<CameraState>() as Match<Any>,
+                Match.instance<CameraEvent>() as Match<Any>).apply {
+                transitions[Match.instance<CameraEvent.PauseRecord>() as Match<CameraEvent>] =
+                    { _, _ -> CameraState.Paused }
+            }
+        put(Match.instance<CameraState.Recording>() as Match<RoadState>, recording)
     }
