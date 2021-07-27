@@ -127,12 +127,14 @@ val trafficLight2 =
                 { _, _ -> Pair(TrafficLightState.RedSM, emptyList()) }
         }
         put(Match.instance<TrafficLightState.Yellow>() as Match<RoadState>, yellow)
-        val red = StateHolderSeven<RoadState, RoadEvent, Any>("--PD", PedestrianState.Walk,
+        val red = StateHolderSeven<RoadState, RoadEvent, Any>("--------PD",
+            Match.instance<PedestrianEvent>() as Match<Any>,
+            PedestrianState.Walk,
             pedestrianStates2).apply {
             transitions[Match.instance<TrafficLightEvent.Timer>() as Match<RoadEvent>] =
                 { _, _ -> Pair(TrafficLightState.Green, emptyList()) }
-            transitions[Match.instance<PedestrianEvent>() as Match<RoadEvent>] =
-                { s, _ -> Pair(s, emptyList()) }
+            /*transitions[Match.instance<PedestrianEvent>() as Match<RoadEvent>] =
+                { s, _ -> Pair(s, emptyList()) }*/
         }
         put(Match.value(TrafficLightState.RedSM) as Match<RoadState>, red)
     }
