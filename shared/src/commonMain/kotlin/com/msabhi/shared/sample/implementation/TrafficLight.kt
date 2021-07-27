@@ -138,3 +138,60 @@ val trafficLight2 =
         }
         put(Match.value(TrafficLightState.RedSM) as Match<RoadState>, red)
     }
+
+//--------------------------------------------------------------------------------------------------------
+
+@Suppress("UNCHECKED_CAST")
+val pedestrianStates3 =
+    LinkedHashMap<Match<Any>, BaseStateEight>().apply {
+        val walk = IStateEight(Match.instance<PedestrianState>() as Match<Any>,
+            Match.instance<PedestrianEvent>() as Match<Any>).apply {
+            transitions[Match.instance<PedestrianEvent.PedestrianCountdown>() as Match<Any>] =
+                { _, _ -> PedestrianState.Wait }
+        }
+        put(Match.instance<PedestrianState.Walk>() as Match<Any>, walk)
+        val wait = IStateEight(Match.instance<PedestrianState>() as Match<Any>,
+            Match.instance<PedestrianEvent>() as Match<Any>).apply {
+            transitions[Match.instance<PedestrianEvent.PedestrianCountdown>() as Match<Any>] =
+                { _, _ -> PedestrianState.Stop }
+        }
+        put(Match.instance<PedestrianState.Wait>() as Match<Any>, wait)
+        val stop = IStateEight(Match.instance<PedestrianState>() as Match<Any>,
+            Match.instance<PedestrianEvent>() as Match<Any>).apply {
+            transitions[Match.instance<PedestrianEvent.PedestrianCountdown>() as Match<Any>] =
+                { _, _ -> PedestrianState.Blinking }
+        }
+        put(Match.instance<PedestrianState.Stop>() as Match<Any>, stop)
+        val blinking = IStateEight(Match.instance<PedestrianState>() as Match<Any>,
+            Match.instance<PedestrianEvent>() as Match<Any>).apply {
+            transitions[Match.instance<PedestrianEvent.PedestrianCountdown>() as Match<Any>] =
+                { _, _ -> PedestrianState.Walk }
+        }
+        put(Match.instance<PedestrianState.Blinking>() as Match<Any>, blinking)
+    }
+
+@Suppress("UNCHECKED_CAST")
+val trafficLight3 =
+    LinkedHashMap<Match<Any>, BaseStateEight>().apply {
+        val green = IStateEight(Match.instance<TrafficLightState>() as Match<Any>,
+            Match.instance<TrafficLightEvent>() as Match<Any>).apply {
+            transitions[Match.instance<TrafficLightEvent.Timer>() as Match<Any>] =
+                { _, _ -> TrafficLightState.Yellow }
+        }
+        put(Match.instance<TrafficLightState.Green>() as Match<Any>, green)
+        val yellow = IStateEight(Match.instance<TrafficLightState>() as Match<Any>,
+            Match.instance<TrafficLightEvent>() as Match<Any>).apply {
+            transitions[Match.instance<TrafficLightEvent.Timer>() as Match<Any>] =
+                { _, _ -> TrafficLightState.RedSM }
+        }
+        put(Match.instance<TrafficLightState.Yellow>() as Match<Any>, yellow)
+        val red = StateHolderEight("PD",
+            Match.instance<PedestrianState>() as Match<Any>,
+            Match.instance<PedestrianEvent>() as Match<Any>,
+            PedestrianState.Walk,
+            pedestrianStates3).apply {
+            transitions[Match.instance<TrafficLightEvent.Timer>() as Match<Any>] =
+                { _, _ -> TrafficLightState.Green }
+        }
+        put(Match.value(TrafficLightState.RedSM) as Match<Any>, red)
+    }
