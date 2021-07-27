@@ -27,7 +27,6 @@ class MaterialStateMachineFiveTest {
             stateMachine.dispatch(MaterialEvent.OnVaporized)
             null
         } catch (e: IllegalStateException) {
-            //e.printStackTrace()
             e
         }
         assertNotNull(exception)
