@@ -9,24 +9,28 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
 
 
-interface BaseStateEight
+interface BaseStateEight<S : Any, E : Any>
 
-open class IStateEight(val stateMatch: Match<Any>, val eventMatch: Match<Any>) : BaseStateEight {
+open class IStateEight<S : Any, E : Any>(
+    val stateMatch: Match<Any>,
+    val eventMatch: Match<Any>,
+) :
+    BaseStateEight<S, E> {
 
-    val transitions = linkedMapOf<Match<Any>, (Any, Any) -> Any>()
+    val transitions = linkedMapOf<Match<E>, (S, E) -> S>()
 }
 
-class StateHolderEight(
+class StateHolderEight<S : Any, E : Any>(
     private val id: Any,
     stateMatch: Match<Any>,
     eventMatch: Match<Any>,
-    initialState: Any,
-    private val states: Map<Match<Any>, BaseStateEight>,
-) : IStateEight(stateMatch, eventMatch) {
+    initialState: S,
+    private val states: Map<Match<Any>, BaseStateEight<S, E>>,
+) : IStateEight<S, E>(stateMatch, eventMatch) {
 
-    var currentState: Any = initialState
+    var currentState: S = initialState
 
-    fun dispatch(event: Any, completableDeferred: CompletableDeferred<Any>?) {
+    fun dispatch(event: E, completableDeferred: CompletableDeferred<S>?) {
         println("$id: ${event::class.simpleName}, ${currentState::class.simpleName}")
 
         transitions.filterKeys { it.matches(event) }.values.firstOrNull()?.let {
@@ -53,23 +57,23 @@ class StateHolderEight(
 }
 
 
-class StateMachineEight(
+class StateMachineEight<S : Any, E : Any>(
     scope: CoroutineScope,
-    private val states: Set<StateHolderEight>,
+    private val states: Set<StateHolderEight<S, E>>,
 ) {
 
-    private val mutableSharedFlow = MutableSharedFlow<Any>()
+    private val mutableSharedFlow = MutableSharedFlow<S>()
 
     private val inputEvents =
-        Channel<Any>(capacity = Int.MAX_VALUE, onBufferOverflow = BufferOverflow.SUSPEND)
+        Channel<E>(capacity = Int.MAX_VALUE, onBufferOverflow = BufferOverflow.SUSPEND)
 
-    val stateFlow: Flow<Any> = mutableSharedFlow
+    val stateFlow: Flow<S> = mutableSharedFlow
 
     init {
         scope.launch {
             for (event in inputEvents) {
                 states.forEach {
-                    val completableDeferred = CompletableDeferred<Any>()
+                    val completableDeferred = CompletableDeferred<S>()
                     it.dispatch(event, completableDeferred)
                     val state = completableDeferred.await()
                     mutableSharedFlow.emit(state)
@@ -78,8 +82,7 @@ class StateMachineEight(
         }
     }
 
-    fun dispatch(event: Any) {
+    fun dispatch(event: E) {
         inputEvents.trySend(event)
     }
-
 }

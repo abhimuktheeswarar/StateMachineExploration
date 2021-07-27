@@ -1,9 +1,7 @@
 package com.msabhi.shared
 
-import com.msabhi.shared.sample.implementation.PedestrianEvent
-import com.msabhi.shared.sample.implementation.TrafficLightEvent
-import com.msabhi.shared.sample.implementation.TrafficLightState
-import com.msabhi.shared.sample.implementation.trafficLight3
+import com.msabhi.shared.sample.implementation.*
+import com.msabhi.shared.sample.statemachine.BaseStateEight
 import com.msabhi.shared.sample.statemachine.Match
 import com.msabhi.shared.sample.statemachine.StateHolderEight
 import com.msabhi.shared.sample.statemachine.StateMachineEight
@@ -22,11 +20,11 @@ class TrafficLightStateMachineEightTest {
     fun testTrafficLight() = runBlockingTest {
         println("----START----")
         val stateHolder =
-            StateHolderEight("TL",
+            StateHolderEight<RoadState, RoadEvent>("TL",
                 Match.instance<TrafficLightState>() as Match<Any>,
                 Match.instance<TrafficLightEvent>() as Match<Any>,
                 TrafficLightState.Green,
-                trafficLight3)
+                trafficLight3 as Map<Match<Any>, BaseStateEight<RoadState, RoadEvent>>)
         val stateMachine =
             StateMachineEight(TestCoroutineScope(SupervisorJob()), setOf(stateHolder))
 
