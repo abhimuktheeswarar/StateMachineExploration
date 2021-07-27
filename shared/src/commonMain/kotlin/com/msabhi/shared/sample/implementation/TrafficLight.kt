@@ -35,6 +35,7 @@ sealed class TrafficLightState : RoadState {
 sealed class TrafficLightEvent : RoadEvent {
 
     object Timer : TrafficLightEvent()
+    object Unknown : TrafficLightEvent()
 }
 
 sealed class CameraState : RoadState {
@@ -195,15 +196,16 @@ val pedestrianStates3 =
 val trafficLightStates3 =
     LinkedHashMap<Match<TrafficLightState>, BaseStateEight<TrafficLightState, TrafficLightEvent>>().apply {
         val green =
-            IStateEight<TrafficLightState, TrafficLightEvent>(Match.instance<TrafficLightState>() as Match<Any>,
-                Match.instance<TrafficLightEvent>() as Match<Any>).apply {
-                transitions[Match.instance<TrafficLightEvent.Timer>() as Match<TrafficLightEvent>] =
+            IStateEight<TrafficLightState, TrafficLightEvent.Timer>(Match.instance<TrafficLightState>() as Match<Any>,
+                Match.instance<TrafficLightEvent.Timer>() as Match<Any>).apply {
+                transitions[Match.instance<TrafficLightEvent.Timer>()] =
                     { _, _ -> TrafficLightState.Yellow }
             }
-        put(Match.instance<TrafficLightState.Green>() as Match<TrafficLightState>, green)
+        put(Match.instance<TrafficLightState.Green>() as Match<TrafficLightState>,
+            green as BaseStateEight<TrafficLightState, TrafficLightEvent>)
         val yellow =
             IStateEight<TrafficLightState, TrafficLightEvent>(Match.instance<TrafficLightState>() as Match<Any>,
-                Match.instance<TrafficLightEvent>() as Match<Any>).apply {
+                Match.instance<TrafficLightEvent.Timer>() as Match<Any>).apply {
                 transitions[Match.instance<TrafficLightEvent.Timer>() as Match<TrafficLightEvent>] =
                     { _, _ -> TrafficLightState.RedSM }
             }

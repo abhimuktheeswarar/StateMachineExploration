@@ -31,12 +31,12 @@ class StateHolderEight<S : Any, E : Any>(
 
     var currentState: S = initialState
 
-    suspend fun dispatch(event: E, sendChannel: SendChannel<S>?) {
+    fun dispatch(event: E, sendChannel: SendChannel<S>?) {
         println("$id: ${event::class.simpleName}, ${currentState::class.simpleName}")
 
         transitions.filterKeys { it.matches(event) }.values.firstOrNull()?.let {
             currentState = it(currentState, event)
-            sendChannel?.send(currentState)
+            sendChannel?.trySend(currentState)
             return
         }
 
@@ -44,16 +44,22 @@ class StateHolderEight<S : Any, E : Any>(
 
             if (it is StateHolderEight && it.eventMatch.matches(event)) {
                 it.dispatch(event, sendChannel)
+                return
             } else if (it is IStateEight) {
                 it.transitions.filterKeys { it.matches(event) }.values.firstOrNull()?.let {
                     currentState = it(currentState, event)
-                    sendChannel?.send(currentState)
+                    sendChannel?.trySend(currentState)
                     return
-                }
+                } ?: throwError(event)
             } else {
-                throw IllegalStateException()
+                throwError(event)
             }
-        } ?: throw IllegalStateException()
+        } ?: throwError(event)
+    }
+
+    private fun throwError(event: E) {
+        println("!!! No match found for ${event::class.simpleName} | ${currentState::class.simpleName}")
+        throw IllegalStateException()
     }
 }
 
@@ -98,8 +104,8 @@ class StateMachineEight<S : Any, E : Any>(
         }
     }
 
-    suspend fun dispatch(event: E) {
+    fun dispatch(event: E) {
         //println("++SM dispatch: ${event::class.simpleName}")
-        inputEvents.send(event)
+        inputEvents.trySend(event)
     }
 }

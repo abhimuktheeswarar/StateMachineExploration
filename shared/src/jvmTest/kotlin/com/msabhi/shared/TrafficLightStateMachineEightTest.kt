@@ -5,12 +5,8 @@ import com.msabhi.shared.sample.statemachine.BaseStateEight
 import com.msabhi.shared.sample.statemachine.Match
 import com.msabhi.shared.sample.statemachine.StateHolderEight
 import com.msabhi.shared.sample.statemachine.StateMachineEight
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.TestCoroutineScope
 import kotlinx.coroutines.test.runBlockingTest
 import org.junit.Test
 
@@ -35,7 +31,7 @@ class TrafficLightStateMachineEightTest {
 
         val sets = setOf<StateHolderEight<RoadState, RoadEvent>>(stateHolder, cameraStateHolder)
         val stateMachine =
-            StateMachineEight<RoadState, RoadEvent>(TestCoroutineScope(SupervisorJob()), sets)
+            StateMachineEight<RoadState, RoadEvent>(CoroutineScope(SupervisorJob()), sets)
 
         val job = launch {
             stateMachine.stateFlow.collect { state ->
@@ -44,7 +40,7 @@ class TrafficLightStateMachineEightTest {
             }
         }
 
-        suspend fun dispatchEvents() {
+        fun dispatchEvents() {
 
             stateMachine.dispatch(TrafficLightEvent.Timer)
             stateMachine.dispatch(TrafficLightEvent.Timer)
@@ -63,6 +59,9 @@ class TrafficLightStateMachineEightTest {
         dispatchEvents()
         println("---------------------------")
         dispatchEvents()
+
+        runCatching { stateMachine.dispatch(TrafficLightEvent.Unknown) }
+            .fold({}, { it.printStackTrace() })
 
         job.cancelAndJoin()
         println("----END----")
