@@ -1,10 +1,7 @@
 package com.msabhi.shared
 
 import com.msabhi.shared.sample.implementation.*
-import com.msabhi.shared.sample.statemachine.BaseStateEight
-import com.msabhi.shared.sample.statemachine.Match
-import com.msabhi.shared.sample.statemachine.StateHolderEight
-import com.msabhi.shared.sample.statemachine.StateMachineEight
+import com.msabhi.shared.sample.statemachine.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.collect
@@ -14,37 +11,36 @@ import kotlinx.coroutines.test.runBlockingTest
 import org.junit.Test
 
 @ExperimentalCoroutinesApi
-class TrafficLightStateMachineEightTest {
+class TrafficLightStateMachineNineTest {
 
     @Test
     @Suppress("UNCHECKED_CAST")
     fun testTrafficLight() = runBlockingTest {
         println("----START----")
-        val cameraStateHolder = StateHolderEight("CAM",
-            Match.instance<CameraState>() as Match<Any>,
-            Match.instance<CameraEvent>() as Match<Any>,
+        val cameraStateHolder = StateHolderNine("CAM",
+            MatchNine.instance<CameraState>() as MatchNine<BaseStateNine>,
+            MatchNine.instance<CameraEvent>() as MatchNine<BaseEventNine>,
             CameraState.Paused,
-            cameraStates as Map<Match<Any>, BaseStateEight<RoadState, RoadEvent>>)
+            cameraStates4 as Map<Match<BaseStateNine>, BaseStateNine>)
 
         val stateHolder =
-            StateHolderEight<RoadState, RoadEvent>("TL",
-                Match.instance<TrafficLightState>() as Match<Any>,
-                Match.instance<TrafficLightEvent>() as Match<Any>,
+            StateHolderNine("TL",
+                MatchNine.instance<TrafficLightState>() as MatchNine<BaseStateNine>,
+                MatchNine.instance<TrafficLightEvent>() as MatchNine<BaseEventNine>,
                 TrafficLightState.Green,
-                trafficLightStates3 as Map<Match<Any>, BaseStateEight<RoadState, RoadEvent>>).apply {
+                trafficLightStates4 as Map<Match<BaseStateNine>, BaseStateNine>).apply {
 
-                transitions[Match.instance<TrafficLightEvent.PowerOutage>() as Match<RoadEvent>] =
+                transitions[MatchNine.instance<TrafficLightEvent.PowerOutage>() as MatchNine<BaseEventNine>] =
                     { _, _ -> TrafficLightState.RedSM(getRedSM(initialState = PedestrianState.Blinking)) }
 
-                transitions[Match.instance<TrafficLightEvent.PowerRestored>() as Match<RoadEvent>] =
+                transitions[MatchNine.instance<TrafficLightEvent.PowerRestored>() as MatchNine<BaseEventNine>] =
                     { _, _ -> TrafficLightState.RedSM() }
             }
 
         val scope = TestCoroutineScope() //CoroutineScope(SupervisorJob())
-        val sets = setOf<StateHolderEight<Any, Any>>(stateHolder as StateHolderEight<Any, Any>,
-            cameraStateHolder as StateHolderEight<Any, Any>)
+        val sets = setOf<StateHolderNine>(stateHolder, cameraStateHolder)
         val stateMachine =
-            StateMachineEight<Any, Any>(scope, sets)
+            StateMachineNine(scope, sets)
 
         val job = launch {
             stateMachine.stateFlow.collect { state ->
@@ -61,6 +57,8 @@ class TrafficLightStateMachineEightTest {
 
             stateMachine.dispatch(TrafficLightEvent.Timer)
             stateMachine.dispatch(TrafficLightEvent.Timer)
+            stateMachine.dispatch(TrafficLightEvent.Timer)
+            return
 
             stateMachine.dispatch(PedestrianEvent.PedestrianCountdown)
             stateMachine.dispatch(PedestrianEvent.PedestrianCountdown)
